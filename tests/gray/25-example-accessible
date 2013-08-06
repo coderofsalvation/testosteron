@@ -1,0 +1,13 @@
+#!/bin/bash 
+ 
+# This is just an example
+
+# path="path/to/your/website"
+
+# cd "$path" 
+# host=$(php index.php config get global['host']);
+# url="http://$host"
+# echo "requesting url: $url"
+# echo ""
+# wget -q "$url" -O /tmp/wget.out || ( echo "ERROR: server not accessible"; exit 1 )
+# rm /tmp/wget.out

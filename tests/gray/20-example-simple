@@ -1,0 +1,6 @@
+#!/bin/bash
+# (very basic test if we can reach the website & see if the jsbundler is working)
+
+ping -c1 "$(echo $BASEURL | sed 's/http:\/\///g')"
+[[ $? == 1 ]] && _throw-error "[x] google offline"
+exit 0

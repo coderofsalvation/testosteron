@@ -1,0 +1,252 @@
+CURLARGS=""  # global curlargs (can be overriden)
+
+C_RESET="\E[0m"
+C_YELLOW="\E[1;33;40m"
+C_RED="\E[1;31;40m"
+C_GREEN="\E[1;32;40m"
+C_WHITE="\E[1;37m"
+
+_strstr (){
+    # if s2 points to a string of zero length, strstr echoes s1
+    [ ${#2} -eq 0 ] && { return 1; }
+    # strstr echoes nothing if s2 does not occur in s1
+    case "$1" in
+    *$2*) ;;
+    *) return 1;;
+    esac
+    # use the pattern matching code to strip off the match and everything
+    # following it
+    first=${1/$2*/}
+    # then strip off the first unmatched portion of the string
+    #echo "${1##$first}"
+    return 0;
+}
+
+_file-contains-error (){
+  local str=$(cat $1)
+  local err=0
+  if _strstr "$str" "ERROR(" ;            then _throw-error "detected signs of PHP error handler action" "$1" && ((err++)) ;fi
+  if _strstr "$str" "HTTP/1.1 404" ;      then _throw-error "404 - page does not exist" "$1" && ((err++)) ; fi
+  if _strstr "$str" "Not Found"    ;      then _throw-error "detected signs of Apache error handler" "$1" && ((err++)) ; fi
+  if _strstr "$str" "The requested URL" ; then _throw-error "detected signs of Apache error handler" "$1" && ((err++)) ; fi
+  if _strstr "$str" "Apache Server" ;     then _throw-error "detected signs of Apache error handler" "$1" && ((err++)) ; fi
+  if _strstr "$str" "|warning|"     ;     then _throw-warning "$( echo "$str" | grep "|warning|" | sed 's/|warning|/[!] /g' | sed 's/^.*> //g' )" "$1" && ((err++)) ; fi
+  if _strstr "$str" "|error|"     ;       then _throw-error "$( echo "$str" | grep "|error|" | sed 's/|error|/[!] /g' | sed 's/^.*> //g' )"       "$1" && ((err++)) ; fi
+  if _strstr "$output" "|succes|" ; then
+    if [ $err == 0 ] ; then _throw-succes "no errors found!"; fi
+  fi
+  return $err
+}
+
+_test-valid-json (){ # very basic checkingec
+  if ! _strstr "$1" "{" ;   then _throw-error "no JSON data detected" ${LOGFILE} && return 1 ; fi
+  if ! _strstr "$1" "}" ;   then _throw-error "no JSON data detected" ${LOGFILE} && return 1 ; fi
+  if _strstr "$1" "<body>"; then _throw-error "no JSON..html returned instead" ${LOGFILE} && return 1 ; fi
+}
+
+_test-valid-html (){
+  echo "$1" | xmllint --html --format - 1>> $2 2>&1
+  if [ $? != 0 ]; then _throw-warning "HTML not wellformed" "$2" ; fi
+}
+
+_test-valid-xml (){
+  echo "$1" | xmllint --format - 1>> $2 2>&1
+  if [ $? != 0 ]; then _throw-warning "XML not wellformed" "$2" && return 1 ; fi
+  return 0
+}
+
+_test-url-exists () {
+  test $# -lt 1 && printf "Usage: `basename $0` <url> <logfile> [ignoremystring]\n\n" && return 0;
+  URL=$(echo "$1" | sed 's/\/\//\//g;s/:\//:\/\//g' ) # remove double slashes in url except http://
+  curl -k "$URL" --head --request GET 1> $LOGFILE 2>&1
+  if [[ $? != 0 ]] ; then _throw-error "corrupt url '$URL'" "$LOGFILE"; return 1; fi
+  _file-contains-error ${LOGFILE} 
+}
+_command-exists () {
+  if ! type "$1" &> /dev/null ; then _throw-warning "command '$1' is not installed..skipping test (please install)" ; fi
+}
+
+_test-links () {
+  local LOGFILE=$(_get-variable logfile)
+  local URL=$(echo "$1" | sed 's/http:\/\///')
+  if _command-exists "linklint" ; then printf "testing links %-4s'$1' (please wait)\n"; linklint -http -host $URL /@ 1>> "$LOGFILE.links" 2>&1; fi
+  printf "link statistics stored in '$LOGFILE.links' \n"
+}
+
+_test-url-url-in-xml-attribute(){
+  test $# -lt 3 && printf "Usage: _test-url-url-in-xml <url> [tag seperated by spaces: '<foo> <bar>'] 'url'   (to test url found in <foo url='http://foo.com'>) \n\n" && return 0;
+  local ATTR=$3
+  printf "testing urls in xml '$1' \n"
+  local xml=$(curl -k "$1" --silent 2>/dev/null)
+  if ! _test-valid-xml "$xml" "$LOGFILE" ; then _throw-warning "aborting testing of urls inside xml-tags '$2' with attribute '$3'" && return 0; fi
+  if [ ${#2} -gt 0 ] ; then local TAGS=$(echo "$2" | sed 's/ / ,/'); printf "( checking $TAGS tags)\n" ; else printf "\n" ; fi
+  if [ ${#2} -gt 0 ] ; then local TAGS=$(echo "$2" | sed 's/[\<\>]//g'); fi
+  printf "testing %-8s'$1'\n" > "$LOGFILE"
+  for tag in $TAGS
+  do
+    local phpcode="
+      \$xml = new DOMDocument();
+      \$xml->load('$1');
+      \$NODes = \$xml->getElementsByTagName('$tag');
+      \$error = false;
+      foreach( \$nodes as \$node )
+        echo \$node->getAttribute('$ATTR').' ';
+    "
+    local urls=$(_run-php "$phpcode")
+    for i in $urls
+    do
+      echo "                  '$BASEURL/$i'"
+      _test-url-exists "$BASEURL/$i";
+    done
+  done
+}
+_test-url-url-in-xml-tag(){
+  test $# -lt 2 && printf "Usage: _test-url-url-in-xml <url> [tag seperated by spaces: '<foo> <bar>']\n\n" && return 0;
+  printf "testing urls in xml '$1' "
+  if [ ${#2} -gt 0 ] ; then local TAGS=$(echo "$2" | sed 's/ / ,/'); printf "( checking $TAGS tags)\n" ; else printf "\n" ; fi
+  if [ ${#2} -gt 0 ] ; then local TAGS=$(echo "$2" | sed 's/[\<\>]//g'); fi
+  printf "testing %-8s'$1'\n" > "$LOGFILE"
+  local xml=$(curl -k "$1" --silent 2>/dev/null)
+  if ! _test-valid-xml "$xml" "$LOGFILE" ; then _throw-warning "aborting testing of urls inside xml-tags '$2'" && return 0; fi
+  for tag in $TAGS
+  do
+    local phpcode="
+      \$xml = new DOMDocument();
+      \$xml->load('$1');
+      \$nodes = \$xml->getElementsByTagName('$tag');
+      \$error = false;
+      foreach( \$nodes as \$node )
+        echo \$node->textContent.' ';
+    "
+    local urls=$(_run-php "$phpcode")
+    for i in $urls
+    do
+      echo "                  '$BASEURL/$i'"
+      _test-url-exists "$BASEURL/$i";
+    done
+  done
+}
+
+_test-url(){
+  local FILECONTENT=""
+  local SYNTAX=""
+  export LAST_URL="$1"
+  printf "testing %-10s'$1' "
+  if [ ${#3} -gt 0 ] ; then local SYNTAX=$(echo "$3" | sed 's/ / ,/'); printf "( checking $SYNTAX syntax)\n" ; else printf "\n" ; fi
+  printf "testing %-8s'$1'\n" > "$LOGFILE"
+  # test file or url
+  if _strstr "$1" "://" ; then
+    echo "calling 'curl -k ${CURLARGS[@]} $1'"; 
+    if _test-url-exists "$1" "$LOGFILE" "$3" ; then FILECONTENT=$(curl -k -o /tmp/curl.txt ${CURLARGS[@]} "$1" 1> /dev/null 2>&1 && test -f /tmp/curl.txt && cat /tmp/curl.txt && rm /tmp/curl.txt); fi
+  else
+    if [ ! -f "$1" ] ; then _throw-error "file '$1' does not exist!" && return 1 ; fi
+    FILECONTENT=$(cat "$1")
+  fi
+  if [ "$VERBOSE" != "" ] ; then echo "output=$FILECONTENT"; fi
+  # test xml if "xml" is found in 3rd paramstrng
+  if _strstr $2 "xml"  ; then _test-valid-xml  "$FILECONTENT" $LOGFILE ; fi
+  if _strstr $2 "html" ; then _test-valid-html "$FILECONTENT" $LOGFILE ; fi
+  if _strstr $2 "json" ; then _test-valid-json "$FILECONTENT" $LOGFILE ; fi
+  if [ "$3" != "" ] ; then 
+    if ! _strstr "$FILECONTENT" $3 ; then _throw-error "string '$3' was not found in output!" && return 1 ; fi
+  fi
+}
+
+# (shows how the testing engine configuration)
+settings(){
+  local BASEDIR=$(_get-variable basedir)
+  local BASEURL=$(_get-variable baseurl)
+  local USERNAME=leon
+  local PASSWORD=secret
+  local COOKIE=$(_get-variable cookie)
+  local COOKIEJAR=$(_get-variable cookiejar)
+  local LOGFILE=$(_get-variable logfile)
+  local EMAIL=$(_get-variable email)
+  local MAX_ERROR=$(_get-variable error_treshold)
+  local VERBOSE=$(_get-variable verbose)
+  printf "[x] reading configuration variables\n"
+  printf "[!] you can configure vars by running:\n"
+  printf "    ./$SELF set-variable <basedir|baseurl|logfile|cookie|cookiejar|email|error_treshold|verbose> <yourvalue>\n"
+  printf "[x] using baseurl   : \E[1;37;40m$BASEURL\E[0;37;40m\n"
+  printf "[x] using basedir   : \E[1;37;40m$BASEDIR\E[0;37;40m\n"
+  printf "[x] using cookie    : \E[1;37;40m$COOKIE\E[0;37;40m\n"
+  printf "[x] using cookiejar : \E[1;37;40m$COOKIEJAR\E[0;37;40m\n"
+  printf "[x] using logfile   : \E[1;37;40m$LOGFILE\E[0;37;40m\n"
+  printf "[x] using email     : \E[1;37;40m$EMAIL\E[0;37;40m\n"
+  printf "[x] error treshold  : \E[1;37;40m$MAX_ERROR\E[0;37;40m\n"
+  printf "[x] verbose         : \E[1;37;40m$VERBOSE\E[0;37;40m\n"
+}
+
+_appendToLog(){
+  local logfile=$(_get-variable logfile)
+  local title="$1\n===================\n\n"
+  printf "$title" >> "$logfile"
+  cat $1 >> "$logfile"
+}
+
+#_test () {
+#  local BASEDIR=$(_get-variable basedir)
+#  local BASEURL=$(_get-variable baseurl)
+#  local USERNAME=leon
+#  local PASSWORD=secret
+#  local COOKIE=$(_get-variable cookie)
+#  local COOKIEJAR=$(_get-variable cookiejar)
+#  local LOGFILE=$(_get-variable logfile)
+#  local EMAIL=$(_get-variable email)
+#  local MAX_ERROR=$(_get-variable error_treshold)
+#  local reqs=$(_test-url-exists)
+#  # start tests
+#  echo "" > "$LOGFILE" && echo "" > "$LOGFILE.errors" && echo "" > "$LOGFILE.links"
+#  _settings
+#  _set-variable "error" "no errors" 1
+#  _set-variable "error_count" 0 1
+#  _set-variable "warning_count" 0 1
+#  _set-variable "last_url" "none" 1
+#  local cmds=$(grep -n "^# {begin:.*:.*}" $SELF_LONG | grep "testsuite" | sed 's/testsuite/_test-urlsuite/g;s/\.monkeytail//g' | cut -d ":" -f 3 )  
+#  echo "$cmds" 
+#  exit
+#  for i in $cmds 
+#  do
+#    $i # run every _test-urlsuite* function
+#  done
+#  local error=$(_get-variable error)
+#  local error_count=$(_get-variable error_count)
+#  local warning_count=$(_get-variable warning_count)
+#  printf "\E[1;33;40m[!] warnings: $warning_count\E[0;37;40m\n"
+#  printf "\E[1;33;40m[!] errors  : $error_count\E[0;37;40m\n"
+#  if _strstr "$error" "no errors" ; 
+#  then
+#    printf "\E[1;32;40m[!] software is feeling groovy! :)\E[0;37;40m\n"
+#  else
+#    local emails=$(_get-variable email | sed 's/,/ /g' )
+#    local loc=$(dirname $0)
+#    printf "\E[1;33;40m[!] last error: $error\E[0;37;40m\n"
+#    printf "\E[1;33;40m[!] errors found! see logfiles '$LOGFILE*' for more info\E[0;37;40m\n"
+#    if [ ${#emails} != 0 ] ; then
+#      if [ $error_count -gt $MAX_ERROR ] ; then
+#        for i in $emails
+#        do
+#          echo "sending email to '$i'"
+#          printf "last error: $error\n\n" > /tmp/log.txt
+#          cat "$LOGFILE.errors" >> /tmp/log.txt
+#          mail -s "$loc/$SELF testsuite failed" $i < /tmp/log.txt
+#          rm /tmp/log.txt
+#        done
+#      fi
+#    else
+#      echo "no emails sent (use './$SELF set-variable email <your@email.com,other@email.com> )"
+#      echo "               (use './$SELF set-variable error_treshold <number-of-errors-before-emailing> )"
+#    fi
+#  fi
+#}
+
+_run-php(){
+  local olddir=$(pwd)
+  cd $BASEDIR
+  local output=$(php -r "$1" 2> $LOGFILE)
+  cd $olddir
+  echo $output > $logfile
+  cat $logfile 
+  _file-contains-error $logfile 
+}
+
