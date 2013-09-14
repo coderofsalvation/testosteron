@@ -15,7 +15,6 @@ SELF=$( basename $0 )
 SELF_LONG=$( printf "$0" | sed 's|./||g')
 
 # include some handy functions
-. lib/testtoolkit.bashlib 
 requirements="sed grep printf cut sort php echo clear curl"
 
 #############################################################3
@@ -23,16 +22,32 @@ requirements="sed grep printf cut sort php echo clear curl"
 # :basedomain=www.google.com:
 # :basedir=.:
 # :email=your@email.com:
-# :logfile=../../data/test.txt:
-# :cookie=../../data/test.cookie.txt:
-# :cookiejar=../../data/test.cookie.jar.txt:
-# :error=no errors:
-# :error_count=0:
+# :logfile=log/test.txt:
+# :cookie=log/test.cookie.txt:
+# :cookiejar=log/test.cookie.jar.txt:
+# :error=ERROR: '10-client.senddata':
+# :error_count=1:
 # :warning_count=0:
 # :error_treshold=3:
 # :last_url=0:
 # :curlargs=:
 # :verbose=:
+
+_strstr (){
+    # if s2 points to a string of zero length, strstr echoes s1
+    [ ${#2} -eq 0 ] && { return 1; }
+    # strstr echoes nothing if s2 does not occur in s1
+    case "$1" in
+    *$2*) ;;
+    *) return 1;;
+    esac
+    # use the pattern matching code to strip off the match and everything
+    # following it
+    first=${1/$2*/}
+    # then strip off the first unmatched portion of the string
+    #echo "${1##$first}"
+    return 0;
+}
 
 checkrequirements(){
   for req in $requirements; do 
@@ -132,7 +147,7 @@ _all-overview(){
   WARNING_COUNT=$(_get-variable warning_count);
   ERROR=$(_get-variable error);
 
-  local reqs=$(_test-url-exists)
+#  local reqs=$(_test-url-exists)
   printf "\n\E[1;33;40m[!] warnings: $WARNING_COUNT\E[0;37;40m\n"
   printf "\E[1;33;40m[!] errors  : $ERROR_COUNT\E[0;37;40m\n"
   if _strstr "$ERROR" "no errors" ; 
@@ -234,7 +249,6 @@ if [[ "$(basename $0)" == "test" ]]; then
   checkrequirements && manual "$1" && test $# -lt 1 && usage && exit 65
   #include libs and tests
   BASEDIR=$(dirname $0)
-  for file in $SELF_PATH/lib/*.bashlib;  do . "$file"; done
   # run test if requested, or perform internal cmd
   if [[ -f "$SELF_PATH/tests/$1" ]]; then _runtest "$1"; 
   else "$@" | tee "$LOGFILE"; fi
