@@ -73,7 +73,7 @@ _throw_error(){
 
 _readfiles(){
   find -L "$1" -type f | sort -n  > $TMPFILE.files 
-  while read file; do FILES+=("$(readlink -f "$file")"); done < $TMPFILE.files
+  while read file; do [[ -x "$file" ]] && FILES+=("$(readlink -f "$file")"); done < $TMPFILE.files
 }
 
 _overview(){
@@ -122,6 +122,10 @@ run(){
   printf "$C_BOLD""==> ""$C_GREEN"" $file $C_RESET\n\n"
   _printcolumn; 
   cd "$path"; { ${PREFIX} ./$file || _throw_error "$file";} > $TMPFILE.out 
+  [[ -f "$file.out" ]] && { 
+    if ! diff "$file.out" "$TMPFILE.out"; then _throw_error "$file (output does not match output $file.out)";
+    else echo "OK: output matches $file.out" >> $TMPFILE.out; fi
+  }
   while read line; do _printf "$line"; done < $TMPFILE.out
   echo ""
   cd "$SELF_PATH" &>/dev/null

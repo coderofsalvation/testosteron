@@ -9,8 +9,9 @@ deadsimple unit/box/regression-testing-tool using bash & shebang files with *any
 
 Why
 ===
-PHPUnit or whatever-cool-programminglanguage-Unit is great but has its bloatedness. In case you are looking for a tool which you can use as a swiss armyknife: testosteron is here.
-Most of the time developers know multiple programming language, so testosteron allows testing in *any* programming language.
+PHPUnit or whatever-cool-programminglanguage-Unit is great..but sometimes bloated/limiting.
+For those who need to test on many levels quickly: testosteron is here.
+Most of the time developers know multiple programming languages, so testosteron allows testing in *any* programming language.
 Testscripts are very easy, they just pass or fail using exitcode 0 or more.
 
 How
@@ -35,7 +36,16 @@ Or if you want your tests to fail after a certain executiontime:
 What are these colornames?
 ==========================
 Gray are [graybox test](http://en.wikipedia.org/wiki/Gray_box_testing), white are more detailed [whitebox tests](http://en.wikipedia.org/wiki/White-box_testing)
-Optionally, make sure you have some cli-entrypoints in your webapplication, so you can easily access website variables within bash.
+Optionally, make sure you have some cli-entrypoints in your webapplication, so you can easily access website/app configvariables within bash.
+
+Notable features
+================
+Just using a teaspoon of bash you can:
+
+* measure cpu,memory and i/o usage per test 
+* compare with expected output (if a test like '10-foo.js' is accompanied with '10-foo.js.out')
+* be flexible when what to tests (presets)
+* its superportable: no frameworks/libs, just 1 file with 100% bash
 
 Advanced Usage
 ==============

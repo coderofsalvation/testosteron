@@ -1,0 +1,25 @@
+#!/bin/bash 
+# simple curl fiddling to test webstuff 
+
+declare -A resources
+baseurl="https://api.github.com/users/coderofsalvation"
+curlcmd=("curl -X GET -L ")
+
+# resources 
+resources["repos"]="checkfoo"
+
+checkfoo(){
+  [[ ! "${1:0:1}" == "[" ]] && [[ ! "${1:0:1}" == "{" ]] && { echo "no json output found"; exit 1; }
+  [[ "$1"         =~ 404 ]] && { echo "404 found"; exit 1; }
+  echo "OK"
+}
+
+call(){  
+  ${curlcmd} --data @requests/body.json "$baseurl/$resource" -H 'Content-Type: application/json'
+}
+
+for resource in "${!resources[@]}"; do 
+  echo -e "requesting $baseurl/$resource\n"
+  output="$( call "$baseurl/$resource" )"
+  ${resources[$resource]} "$output"
+done
