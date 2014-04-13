@@ -27,15 +27,15 @@ Now, since we want to be flexible, we can define presets using symlinks
 
 After that, just run 1 test:
 
-    ./test run tests/white/10001-test.js 
+    ./testosteron run tests/white/10001-test.js 
 
 Or for a whole dir with tests:
 
-    ./test rundir tests/white 
+    ./testosteron rundir tests/white 
 
 Or a certain preset:
 
-    ./test rundir presets/offline
+    ./testosteron rundir presets/offline
 
 Or if you want your tests to fail after a certain executiontime:
 
@@ -66,3 +66,10 @@ Advanced Usage
 ==============
 Testosteron was made with autodeployment in mind, therefore it works great with GIT & [Deployogi](https://github.com/coderofsalvation/deployogi).
 If one pushes a new website to the server, deployogi runs all the tests, if the test fail, deployment will halt.
+Example .git/hooks/post-commit :
+
+    ./testosteron rundir presets/deployment || {
+      echo "removing last commit since you did not pass testosteron..sorry"
+      git reset --hard HEAD~1
+    }
+
