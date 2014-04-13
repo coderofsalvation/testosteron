@@ -79,9 +79,8 @@ _readfiles(){
 _overview(){
   total=${#FILES}
   succes=$(( ${#FILES} - FAIL ));
-  _tprintf "tests executed: $total";
-  _tprintf "tests succes  : $succes";
-  _tprintf "tests fail    : $FAIL";
+  _tprintf "tests executed : $total";
+  _tprintf "tests fail     : $FAIL";
   for file in "${ERRORFILES[@]}"; do 
     _tprintf "  -> $file";
   done
