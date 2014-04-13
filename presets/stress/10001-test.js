@@ -1,0 +1,1 @@
+../../tests/white/10001-test.js
