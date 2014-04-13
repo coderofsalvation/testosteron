@@ -86,17 +86,14 @@ _overview(){
   done
 }
 
-#_usage(){
-#  echo "Usage: "
-#  grep "^[^_].\+(){$" $0 | while read line; do
-#    local cmd=$(echo "$line" | sed "s/(){//g")
-#    local info=$(grep -C0 -A0 -B1 "$cmd(){" $0 | sed "N;s/\n.*//g;" )
-#    local me=$(basename $0)
-#    printf "  $me %-5s %-40s\n" "$cmd" "$info" | grep "#" | sed 's/#//g'
-#  done; echo "";
-#  printf "\nHINT: for branchspecific deployments one can use environment variables:\n"
-#  printf "\n  deployogi init .\n  mv deployogi.d deployogi.d.foo\n  DEPLOYOGIDIR=deployogi.d.foo deployogi deploy\n"
-#}
+_usage(){
+  echo "Usage: "
+  grep "^[^_].\+(){$" $0 | while read line; do
+    local cmd=$(echo "$line" | sed "s/(){//g")
+    local info=$(grep -C0 -A0 -B1 "$cmd(){" $0 | sed "N;s/\n.*//g" )
+    printf "    $0 %-20s %-40s\n" "$cmd" "${info/\# /}" 
+  done; echo "";
+}
 
 # filters out escape codes
 _filterescape(){
@@ -106,7 +103,7 @@ _filterescape(){
 ##########################################################
 # Application functions
 
-# <dir>        - runs all tests found in dirs (recursively)
+# <dir>        runs all tests found in dirs (recursively)
 rundir(){
   dir="$1";
   [[ ! -d "$dir" ]] && { _tprintf "$dir: no such dir"; exit 1; }
@@ -116,7 +113,7 @@ rundir(){
   exit 0
 }
 
-# <file>        - runs all tests found in dirs (recursively)
+# <file>       runs one test 
 run(){
   file="$(basename "$1")"; path="$(dirname "$1" )";
   printf "$C_BOLD""==> ""$C_GREEN"" $file $C_RESET\n\n"
