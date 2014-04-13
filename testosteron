@@ -99,6 +99,11 @@ _overview(){
 #  printf "\n  deployogi init .\n  mv deployogi.d deployogi.d.foo\n  DEPLOYOGIDIR=deployogi.d.foo deployogi deploy\n"
 #}
 
+# filters out escape codes
+_filterescape(){
+  sed -i -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" "$1"
+}
+
 ##########################################################
 # Application functions
 
@@ -117,7 +122,7 @@ run(){
   file="$(basename "$1")"; path="$(dirname "$1" )";
   printf "$C_BOLD""==> ""$C_GREEN"" $file $C_RESET\n\n"
   _printcolumn; 
-  cd "$path"; { ./$file || _throw_error "$file";} > $TMPFILE.out 
+  cd "$path"; { ${PREFIX} ./$file || _throw_error "$file";} > $TMPFILE.out 
   while read line; do _printf "$line"; done < $TMPFILE.out
   echo ""
   cd "$SELF_PATH" &>/dev/null
@@ -130,4 +135,5 @@ trap _cleanup SIGTERM 0 1 2 3 15
 {
   _init && [[ -n "$1" ]] && "$@" || _usage
 } | tee -a $LOGFILE
+_filterescape "$LOGFILE"
   
