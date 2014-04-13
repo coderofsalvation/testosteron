@@ -16,8 +16,16 @@ Testscripts are very easy, they just pass or fail using exitcode 0 or more.
 
 How
 ===
-Just drop this repository in your webapplication rootdir, and you are ready to go write some testscripts.
-After that, just run:
+Supersimple, just shebang files and symbolic links.
+Lets look at the tests:
+
+<img alt="" src="doc/tests.png"/>
+
+Now, since we want to be flexible, we can define presets using symlinks
+
+<img alt="" src="doc/presets.png"/>
+
+After that, just run 1 test:
 
     ./test run tests/white/10001-test.js 
 
@@ -32,6 +40,13 @@ Or a certain preset:
 Or if you want your tests to fail after a certain executiontime:
 
     PREFIX="timeout 1.3s" ./testosteron rundir presets/stress
+
+Installation
+============
+Just drop this repository in your webapplication rootdir, and you are ready to go write some testscripts:
+
+    git clone https://github.com/coderofsalvation/testosteron.git
+    cd testosteron && rm -rf doc
 
 What are these colornames?
 ==========================
