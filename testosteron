@@ -59,7 +59,7 @@ _printcolumn(){
 
 _cleanup(){
   [[ -f $TMPFILE.fail ]] && exitcode=1 || exitcode=0
-  rm -f "$TMPFILE.*" &>/dev/null
+  rm -f $TMPFILE.* &>/dev/null
   exit $exitcode
 }
 
@@ -79,8 +79,8 @@ _readfiles(){
 }
 
 _overview(){
-  total=${#FILES}
-  succes=$(( ${#FILES} - FAIL ));
+  total=${#FILES[@]}
+  succes=$(( total - FAIL ));
   _tprintf "tests executed : $total";
   _tprintf "tests fail     : $FAIL";
   for file in "${ERRORFILES[@]}"; do 
