@@ -1,6 +1,6 @@
-projectpage: https://github.com/coderofsalvation/testosteron
-
-<p align="center"><img src="doc/testosteron.gif"/></p>
+<p align="center"><img src="doc/testosteron.gif"/><br>
+  https://github.com/coderofsalvation/testosteron
+</p>
 
 testosteron
 ===========
