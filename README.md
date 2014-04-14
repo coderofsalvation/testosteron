@@ -1,9 +1,9 @@
+projectpage: https://github.com/coderofsalvation/testosteron
+
 <p align="center"><img src="doc/testosteron.gif"/></p>
 
 testosteron
 ===========
-
-https://github.com/coderofsalvation/testosteron
 
 deadsimple unit/box/regression-testing-tool using bash & shebang files with *any* programminglanguage.
 
