@@ -12,7 +12,7 @@ deadsimple unit/box/regression-testing-tool using bash & shebang files with *any
 Why
 ===
 PHPUnit or whatever-cool-programminglanguage-Unit is great..but sometimes limiting.
-For those who need to test on many levels quickly: testosteron is here, too bootstrap any testscript- or testframework.
+For those who need to test on many levels quickly: testosteron is here, which bootstraps any testscript- or testframework.
 Most of the time developers know multiple programming languages, so testosteron allows testing in *any* programming language.
 Testscripts are very easy, they just pass or fail using exitcode 0 or more.
 
