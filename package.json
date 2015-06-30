@@ -1,6 +1,6 @@
 {
   "name": "testosteron",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "simple crosslanguage testing-utility using bash, crosslanguage bootstrapper for unittests",
   "main": "index.js",
   "directories": {

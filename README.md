@@ -9,6 +9,20 @@ deadsimple unit/box/regression-testing-tool using bash & shebang files with *any
 
 <p align="center"><img src="doc/testosteron.png"/></p>
 
+Installation 
+============
+
+using git
+  
+    $ git clone https://github.com/coderofsalvation/testosteron 
+    $ cd testosteron 
+    $ ./testosteron rundir tests/white
+
+or using npm:
+
+    $ npm install testosteron
+    $ node_modules/.bin/testosteron rundir node_modules/testosteron/tests/white
+
 Why
 ===
 PHPUnit or whatever-cool-programminglanguage-Unit is great..but sometimes limiting.
