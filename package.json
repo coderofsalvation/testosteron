@@ -1,0 +1,32 @@
+{
+  "name": "testosteron",
+  "version": "0.0.5",
+  "description": "simple crosslanguage testing-utility using bash, crosslanguage bootstrapper for unittests",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin" : { "testosteron" : "./testosteron" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coderofsalvation/testosteron"
+  },
+  "keywords": [
+    "test",
+    "unittesting",
+    "testing",
+    "crosslanguage",
+    "batch",
+    "deployment"
+  ],
+  "author": "Coder of Salvation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/coderofsalvation/testosteron/issues"
+  },
+  "homepage": "https://github.com/coderofsalvation/testosteron"
+}
