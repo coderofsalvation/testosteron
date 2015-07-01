@@ -80,9 +80,10 @@ Just using a teaspoon of bash you can:
 
 Advanced Usage
 ==============
-Testosteron was made with autodeployment in mind, therefore it works great with GIT & [Deployogi](https://github.com/coderofsalvation/deployogi).
-If one pushes a new website to the server, deployogi runs all the tests, if the test fail, deployment will halt.
-Example .git/hooks/post-commit :
+Testosteron was made with autodeployment in mind, therefore it works great with GIThooks and/or [nodejs-deploy-githook.bash](https://github.com/coderofsalvation/nodejs-deploy-githook.bash)
+ or [project-deploy-githook.bash](https://github.com/coderofsalvation/project-deploy-githook.bash)
+If one pushes a new website to the server, testosteron runs all the tests, if something fails, deployment will halt.
+Example .ndg/hooks/test :
 
     ./testosteron rundir presets/deployment || {
       echo "removing last commit since you did not pass testosteron..sorry"
